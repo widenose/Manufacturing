@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manufacturing Operations Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f5f7;
+      color: #333;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 60px 1fr;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: #1f2933;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      border-radius: 4px;
+      color: #e5e7eb;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .nav-link.active,
+    .nav-link:hover {
+      background: #374151;
+    }
+
+    .header {
+      grid-area: header;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .main {
+      grid-area: main;
+      padding: 20px;
+    }
+
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .card-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .card-value {
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 2fr 1.3fr;
+      gap: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    .status-pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      display: inline-block;
+    }
+
+    .status-ok { background: #dcfce7; color: #166534; }
+    .status-warn { background: #fef9c3; color: #854d0e; }
+    .status-err { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Manufacturing</h2>
+      <a class="nav-link active">Dashboard</a>
+      <a class="nav-link">Production</a>
+      <a class="nav-link">Quality</a>
+      <a class="nav-link">Maintenance</a>
+    </aside>
+
+    <header class="header">
+      <div class="header-title">Operations Dashboard</div>
+      <div>Shift A · Last update: 3 min ago</div>
+    </header>
+
+    <main class="main">
+      <div class="main-header">
+        <h1>Plant Overview</h1>
+        <div>Today · 6:00 AM – Now</div>
+      </div>
+
+      <!-- Top KPIs -->
+      <section class="cards">
+        <div class="card">
+          <div class="card-title">Units Produced</div>
+          <div class="card-value">4,820</div>
+        </div>
+        <div class="card">
+          <div class="card-title">OEE</div>
+          <div class="card-value">87%</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Downtime</div>
+          <div class="card-value">42 min</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Defect Rate</div>
+          <div class="card-value">1.6%</div>
+        </div>
+      </section>
+
+      <!-- Charts + Right Panel -->
+      <section class="row">
+        <div class="card">
+          <div class="card-title">Hourly Units Produced</div>
+          <canvas id="productionChart"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Line Status</div>
+          <table>
+            <tr>
+              <th>Line</th>
+              <th>Output</th>
+              <th>Status</th>
+            </tr>
+            <tr>
+              <td>Line A</td>
+              <td>1,620</td>
+              <td><span class="status-pill status-ok">Running</span></td>
+            </tr>
+            <tr>
+              <td>Line B</td>
+              <td>1,480</td>
+              <td><span class="status-pill status-warn">Slow</span></td>
+            </tr>
+            <tr>
+              <td>Line C</td>
+              <td>1,120</td>
+              <td><span class="status-pill status-err">Down</span></td>
+            </tr>
+          </table>
+
+          <br />
+
+          <div class="card-title">Downtime by Cause</div>
+          <canvas id="downtimeChart"></canvas>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    new Chart(document.getElementById('productionChart'), {
+      type: 'line',
+      data: {
+        labels: ['6 AM','7 AM','8 AM','9 AM','10 AM','11 AM','12 PM'],
+        datasets: [{
+          label: 'Units',
+          data: [420, 680, 720, 810, 760, 740, 690],
+          borderColor: 'rgba(59,130,246,1)',
+          backgroundColor: 'rgba(59,130,246,0.2)',
+          tension: 0.3,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    new Chart(document.getElementById('downtimeChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Mechanical', 'Material', 'Operator', 'Quality'],
+        datasets: [{
+          label: 'Minutes',
+          data: [18, 10, 8, 6],
+          backgroundColor: 'rgba(239,68,68,0.7)'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  </script>
+</body>
+</html>
